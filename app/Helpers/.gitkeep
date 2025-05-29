@@ -1,0 +1,14 @@
+<?php
+
+if (!function_exists('formatDate')) {
+    /**
+     * Format a given date to a readable format.
+     *
+     * @param string $date
+     * @param string $format
+     * @return string
+     */
+    function formatDate($date, $format = 'd/m/Y') {
+        return \DateTime::createFromFormat('Y-m-d', $date)->format($format);
+    }
+}
