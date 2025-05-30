@@ -1,33 +1,32 @@
 FROM php:8.2-apache
 
-# Instala dependências do sistema
 RUN apt-get update && apt-get install -y \
     libicu-dev \
     unzip \
     git \
     zip \
-    libzip-dev \
-    && docker-php-ext-configure intl \
-    && docker-php-ext-install intl pdo pdo_mysql mysqli zip
+    && docker-php-ext-install intl pdo pdo_mysql mysqli
+
+# Exibir erros do PHP
+RUN echo "display_errors = On\nerror_reporting = E_ALL" > /usr/local/etc/php/conf.d/docker-php-errors.ini
 
 # Instala Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Habilita mod_rewrite para CodeIgniter
-RUN a2enmod rewrite
+# Habilita mod_rewrite e configura DocumentRoot
+RUN a2enmod rewrite && \
+    sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf && \
+    echo '<Directory /var/www/html/public>\nAllowOverride All\nRequire all granted\n</Directory>' >> /etc/apache2/apache2.conf
 
-# Corrige o DocumentRoot do Apache para a pasta /public
-RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
-
-# Copia os arquivos da aplicação
+# Copia arquivos
 COPY . /var/www/html/
+COPY .env /var/www/html/.env
 
-# Instala dependências do projeto
 WORKDIR /var/www/html
+
 RUN composer install --no-dev --optimize-autoloader
 
-# Define permissões da pasta writable
-RUN chown -R www-data:www-data writable \
-    && chmod -R 775 writable
+RUN chown -R www-data:www-data /var/www/html && \
+    chmod -R 775 /var/www/html/writable
 
 EXPOSE 80
