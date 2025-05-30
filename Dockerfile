@@ -1,12 +1,14 @@
 FROM php:8.2-apache
 
-# Instala dependências necessárias
+# Instala dependências do sistema
 RUN apt-get update && apt-get install -y \
     libicu-dev \
     unzip \
     git \
     zip \
-    && docker-php-ext-install intl pdo pdo_mysql mysqli
+    libzip-dev \
+    && docker-php-ext-configure intl \
+    && docker-php-ext-install intl pdo pdo_mysql mysqli zip
 
 # Instala Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -20,7 +22,7 @@ RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available
 # Copia os arquivos da aplicação
 COPY . /var/www/html/
 
-# Instala dependências PHP do projeto
+# Instala dependências do projeto
 WORKDIR /var/www/html
 RUN composer install --no-dev --optimize-autoloader
 
